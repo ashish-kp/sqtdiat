@@ -387,3 +387,51 @@ def density_rand(n):
     state_vector = state_rand(n)
     density_random = density_mat_from_state_vec(state_vector)
     return density_random
+
+def partial_trace(tot, pttx, rho = 'ran'):
+    """
+    Returns the partial trace of a density matrix
+    """
+    kk = [2**i for i in pttx]
+    kk = kk[::-1]
+    jj = [2**i for i in range(tot) if i not in pttx]
+    jj = jj[::-1]
+    if rho == 'ran':
+        rho = density_mat_from_state_vec(normalize_state_vec([i for i in range(1, 2**tot + 1)]))
+
+    def binfromdec(number, rng):
+        arr = []
+        while number > 0:
+            arr.append(str(number % 2))
+            number //= 2 
+        while len(arr) < rng:
+            arr.append(str(0))
+        return "".join(arr[::-1])
+
+
+    gg = []
+
+    for i in range(2**(tot - len(pttx))):
+        str1 = binfromdec(i, tot - len(pttx))
+        sum = 0
+        for j in range(len(str1)):
+            sum += int(str1[j]) * jj[j]
+        gg.append(sum)
+
+    hh = []
+    for i in range(2**(len(pttx))):
+        str1 = binfromdec(i, len(pttx))
+        sum = 0
+        for j in range(len(str1)):
+            sum += int(str1[j]) * kk[j]
+        hh.append(sum)
+    hh = np.array(hh)
+
+    ans = np.zeros((2**(tot - len(pttx)), 2**(tot - len(pttx))))
+    for i in range(len(hh)):
+        
+        ll = hh[i] + gg
+        for j in range(ans.shape[0]):
+            for k in range(ans.shape[0]):
+                ans[j][k] += rho[ll[j]][ll[k]]
+    return ans
